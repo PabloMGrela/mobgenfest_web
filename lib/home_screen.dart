@@ -75,6 +75,32 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "30|31 Mayo | 1 Junio 2025",
+                          style: TextStyle(
+                              letterSpacing: 2.0, fontSize: 30, fontFamily: 'Lab', color: const Color(0xFFFF6600)),
+                        ),
+                        SizedBox(
+                          width: 8,
+                        ),
+                        Text("Ledoño",
+                            style: TextStyle(
+                                fontSize: 30,
+                                fontFamily: 'Lab',
+                                letterSpacing: 2.0,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFFFF6600))),
+                        SizedBox(
+                          width: 8,
+                        ),
+                        Text("A Coruña",
+                            style: TextStyle(
+                                fontSize: 30, fontFamily: 'Lab', letterSpacing: 2.0, color: const Color(0xFFFF6600))),
+                      ],
+                    ),
                     AlternatingWrap(),
                     SizedBox(
                       height: 32,
