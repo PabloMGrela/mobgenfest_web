@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
+      title: 'Mobgen Fest 2025',
       theme: ThemeData(
         fontFamily: 'Lab',
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
