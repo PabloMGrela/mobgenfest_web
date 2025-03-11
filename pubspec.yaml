@@ -12,6 +12,8 @@ dependencies:
 
   cupertino_icons: ^1.0.8
   flip_panel_plus: ^1.0.0+3
+  url_launcher: ^6.3.1
+  url_launcher_web: ^2.4.0
 
 dev_dependencies:
   flutter_test:

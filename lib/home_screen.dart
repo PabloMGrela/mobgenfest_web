@@ -1,8 +1,7 @@
-import 'dart:async';
-
 import 'package:flip_panel_plus/flip_panel_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:mobgenfest/alternate_wrap.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -12,8 +11,8 @@ class HomeScreen extends StatefulWidget {
 class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
-  late Timer _timer;
   Duration timeLeft = _calculateTimeLeft();
+  bool showJoinButton = false;
 
   static Duration _calculateTimeLeft() {
     DateTime targetDate = DateTime(2025, 3, 12, 12, 0, 0);
@@ -24,7 +23,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _setupAnimations();
-    _startTimer();
+    showJoinButton = _calculateTimeLeft().isNegative;
   }
 
   void _setupAnimations() {
@@ -38,17 +37,8 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        timeLeft = _calculateTimeLeft();
-      });
-    });
-  }
-
   @override
   void dispose() {
-    _timer.cancel();
     _pulseController.dispose();
     super.dispose();
   }
@@ -61,7 +51,16 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           padding: EdgeInsets.all(8),
           child: Image.asset("assets/images/mobgenfest_logo.png"),
         ),
-        actions: [],
+        actions: [
+          MaterialButton(
+              child: Text(
+                "FAQ",
+                style: TextStyle(fontFamily: 'Lab', fontSize: 30, letterSpacing: 2, color: const Color(0xFFFF6600)),
+              ),
+              onPressed: () {
+                Navigator.pushNamed(context, '/faq');
+              })
+        ],
       ),
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -105,35 +104,88 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     SizedBox(
                       height: 32,
                     ),
-                    Text(
-                      "Inscripciones abiertas en",
-                      style: TextStyle(
-                        fontFamily: 'Lab',
-                        fontSize: 35,
-                        fontWeight: FontWeight.w900,
-                        shadows: [
-                          Shadow(
-                            blurRadius: 10,
-                            color: Colors.black.withOpacity(0.2),
-                            offset: Offset(2, 2),
-                          )
-                        ],
+                    if (showJoinButton)
+                      Text(
+                        "Inscripciones abiertas",
+                        style: TextStyle(
+                          fontFamily: 'Lab',
+                          fontSize: 35,
+                          fontWeight: FontWeight.w900,
+                          shadows: [
+                            Shadow(
+                              blurRadius: 10,
+                              color: Colors.black.withOpacity(0.2),
+                              offset: Offset(2, 2),
+                            )
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
+                    if (showJoinButton)
+                      ElevatedButton.icon(
+                        icon: Icon(Icons.monetization_on_outlined, color: Color(0xFFFF6600)),
+                        label: Text(
+                          'Abonos',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFFF6600),
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            side: BorderSide(
+                              color: Color(0xFFFF6600),
+                              width: 2.0,
+                            ),
+                          ),
+                        ),
+                        onPressed: () async {
+                          final Uri url = Uri.parse("https://forms.gle/86cUnAnAbUMoqcTw9");
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(url, webOnlyWindowName: '_blank');
+                          } else {
+                            throw 'No se pudo abrir $url';
+                          }
+                        },
+                      ),
+                    if (!showJoinButton)
+                      Text(
+                        "Inscripciones abiertas en",
+                        style: TextStyle(
+                          fontFamily: 'Lab',
+                          fontSize: 35,
+                          fontWeight: FontWeight.w900,
+                          shadows: [
+                            Shadow(
+                              blurRadius: 10,
+                              color: Colors.black.withOpacity(0.2),
+                              offset: Offset(2, 2),
+                            )
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     const SizedBox(height: 20),
-                    Center(
-                      // Widget Center adicional
-                      child: FlipClockPlus.reverseCountdown(
-                        duration: _calculateTimeLeft(),
-                        digitColor: Colors.white,
-                        backgroundColor: Colors.black,
-                        digitSize: 30.0,
-                        centerGapSpace: 0.0,
-                        borderRadius: const BorderRadius.all(Radius.circular(3.0)),
-                        onDone: () {},
+                    if (!showJoinButton)
+                      Center(
+                        child: FlipClockPlus.reverseCountdown(
+                          duration: _calculateTimeLeft(),
+                          digitColor: Colors.white,
+                          backgroundColor: Colors.black,
+                          digitSize: 30.0,
+                          centerGapSpace: 0.0,
+                          borderRadius: const BorderRadius.all(Radius.circular(3.0)),
+                          onDone: () {
+                            setState(() {
+                              showJoinButton = true;
+                            });
+                          },
+                        ),
                       ),
-                    ),
                   ],
                 ),
                 Center(
@@ -207,21 +259,6 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _NavButton extends StatelessWidget {
-  final String text;
-  final VoidCallback? onPressed;
-
-  const _NavButton({required this.text, this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return TextButton(
-      onPressed: onPressed,
-      child: Text(text, style: TextStyle(color: Colors.black, fontSize: 25, fontFamily: 'Lab')),
     );
   }
 }

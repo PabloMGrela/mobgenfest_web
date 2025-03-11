@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobgenfest/faq_screen.dart';
 import 'package:mobgenfest/home_screen.dart';
-import 'package:mobgenfest/information_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,11 +14,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Mobgen Fest 2025',
-      routes: {'/more_info': (context) => InformationScreen()},
+      routes: {'/faq': (context) => FAQScreen()},
       theme: ThemeData(
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.orange.shade300,
+            backgroundColor: Color(0xFFFF6600),
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
