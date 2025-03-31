@@ -12,10 +12,10 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
   Duration timeLeft = _calculateTimeLeft();
-  bool showJoinButton = false;
+  bool showJoinButton = true;
 
   static Duration _calculateTimeLeft() {
-    DateTime targetDate = DateTime(2025, 3, 12, 12, 0, 0);
+    DateTime targetDate = DateTime(2025, 4, 15, 12, 0, 0);
     return targetDate.difference(DateTime.now());
   }
 
@@ -23,7 +23,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _setupAnimations();
-    showJoinButton = _calculateTimeLeft().isNegative;
+    showJoinButton = !_calculateTimeLeft().isNegative;
   }
 
   void _setupAnimations() {
@@ -121,6 +121,23 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                         textAlign: TextAlign.center,
                       ),
+                    if (!showJoinButton)
+                      Text(
+                        "Inscripciones cerradas",
+                        style: TextStyle(
+                          fontFamily: 'Lab',
+                          fontSize: 35,
+                          fontWeight: FontWeight.w900,
+                          shadows: [
+                            Shadow(
+                              blurRadius: 10,
+                              color: Colors.black.withOpacity(0.2),
+                              offset: Offset(2, 2),
+                            )
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     if (showJoinButton)
                       ElevatedButton.icon(
                         icon: Icon(Icons.monetization_on_outlined, color: Color(0xFFFF6600)),
@@ -152,9 +169,12 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           }
                         },
                       ),
-                    if (!showJoinButton)
+                    SizedBox(
+                      height: 8,
+                    ),
+                    if (showJoinButton)
                       Text(
-                        "Inscripciones abiertas en",
+                        "Se cierran las inscripciones en:",
                         style: TextStyle(
                           fontFamily: 'Lab',
                           fontSize: 35,
@@ -170,7 +190,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         textAlign: TextAlign.center,
                       ),
                     const SizedBox(height: 20),
-                    if (!showJoinButton)
+                    if (showJoinButton)
                       Center(
                         child: FlipClockPlus.reverseCountdown(
                           duration: _calculateTimeLeft(),
