@@ -3,7 +3,7 @@ const MANIFEST = 'flutter-app-manifest';
 const TEMP = 'flutter-temp-cache';
 const CACHE_NAME = 'flutter-app-cache';
 
-const RESOURCES = {"flutter_bootstrap.js": "738cda4678a6491748bab0ab554024b1",
+const RESOURCES = {"flutter_bootstrap.js": "04858d0883da101b6f429f665c95b257",
 "version.json": "5e5da10befdd0134a62ac004f36b686d",
 "index.html": "7c9076f38ea298c840ae86e54c716946",
 "/": "7c9076f38ea298c840ae86e54c716946",
@@ -24,7 +24,7 @@ const RESOURCES = {"flutter_bootstrap.js": "738cda4678a6491748bab0ab554024b1",
 "assets/AssetManifest.bin": "aa279c76a7ea1ac7a969faf1fd9efc28",
 "assets/fonts/MaterialIcons-Regular.otf": "8108af5a2689dd5de1f64735142eeacb",
 "assets/fonts/Lab-Medium.ttf": "ba545721642400006d9910f19a46c098",
-"assets/assets/images/mobgenfest_logo.png": "4f185c9c555a8f133cb0f179b0296bb0",
+"assets/assets/images/mobgenfest_logo.png": "2df9e0a34db9898f5c14184d47558e7a",
 "canvaskit/skwasm.js": "ac0f73826b925320a1e9b0d3fd7da61c",
 "canvaskit/skwasm.js.symbols": "96263e00e3c9bd9cd878ead867c04f3c",
 "canvaskit/canvaskit.js.symbols": "efc2cd87d1ff6c586b7d4c7083063a40",
