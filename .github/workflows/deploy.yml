@@ -20,7 +20,6 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
           channel: 'stable'
 
       - name: Get dependencies
@@ -40,8 +39,10 @@ jobs:
 
       - name: Deploy to GitHub Pages
         run: |
-          # Remove old docs content
-          rm -rf docs/*
+          # Ensure docs directory exists
+          mkdir -p docs
+          # Remove old docs content safely
+          find docs -mindepth 1 -delete
           # Copy new build to docs
           cp -r build/web/* docs/
           # Configure git
