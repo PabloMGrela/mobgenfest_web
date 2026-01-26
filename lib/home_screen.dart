@@ -1,283 +1,158 @@
-import 'package:flip_panel_plus/flip_panel_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:mobgenfest/alternate_wrap.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:mobgenfest/constants.dart';
+import 'package:mobgenfest/sections/hero_section.dart';
+import 'package:mobgenfest/sections/lineup_section.dart';
+import 'package:mobgenfest/sections/food_section.dart';
+import 'package:mobgenfest/sections/ticket_section.dart';
+import 'package:mobgenfest/ticker_banner.dart';
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
-  State<StatefulWidget> createState() => HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
-  Duration timeLeft = _calculateTimeLeft();
-  bool showJoinButton = true;
+class _HomeScreenState extends State<HomeScreen> {
+  final ScrollController _scrollController = ScrollController();
+  double _scrollOffset = 0;
 
-  static Duration _calculateTimeLeft() {
-    DateTime targetDate = DateTime(2025, 4, 15, 12, 0, 0);
-    return targetDate.difference(DateTime.now());
-  }
+  final GlobalKey _lineupKey = GlobalKey();
+  final GlobalKey _foodKey = GlobalKey();
+  final GlobalKey _ticketsKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
-    _setupAnimations();
-    showJoinButton = !_calculateTimeLeft().isNegative;
-  }
-
-  void _setupAnimations() {
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-
-    _pulseAnimation = Tween(begin: 0.95, end: 1.05).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    _scrollController.addListener(() {
+      setState(() {
+        _scrollOffset = _scrollController.offset;
+      });
+    });
   }
 
   @override
   void dispose() {
-    _pulseController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollToSection(int index) {
+    GlobalKey? key;
+    if (index == 1) key = _lineupKey;
+    if (index == 2) key = _foodKey;
+    if (index == 3) key = _ticketsKey;
+
+    if (key != null && key.currentContext != null) {
+      final RenderBox box = key.currentContext!.findRenderObject() as RenderBox;
+      final double position = box.localToGlobal(Offset.zero).dy;
+      final double offset = _scrollController.offset + position - 80;
+
+      _scrollController.animateTo(
+        offset,
+        duration: const Duration(milliseconds: 800),
+        curve: Curves.easeInOutCubic,
+      );
+    } else if (index == 0) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 800),
+        curve: Curves.easeInOutCubic,
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: Padding(
-          padding: EdgeInsets.all(8),
-          child: Image.asset("assets/images/mobgenfest_logo.png"),
+      extendBodyBehindAppBar: true,
+      appBar: _buildAppBar(),
+      body: SingleChildScrollView(
+        controller: _scrollController,
+        child: Column(
+          children: [
+            HeroSection(onGetTicketsTap: () => _scrollToSection(3)),
+            const ModernTickerBanner(),
+            LineupSection(key: _lineupKey),
+            FoodSection(key: _foodKey),
+            TicketSection(key: _ticketsKey),
+            _buildFooter(),
+          ],
         ),
-        actions: [
-          MaterialButton(
-              child: Text(
-                "FAQ",
-                style: TextStyle(fontFamily: 'Lab', fontSize: 30, letterSpacing: 2, color: const Color(0xFFFF6600)),
-              ),
-              onPressed: () {
-                Navigator.pushNamed(context, '/faq');
-              })
-        ],
       ),
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "30|31 Mayo | 1 Junio 2025",
-                          style: TextStyle(
-                              letterSpacing: 2.0, fontSize: 30, fontFamily: 'Lab', color: const Color(0xFFFF6600)),
-                        ),
-                        SizedBox(
-                          width: 8,
-                        ),
-                        Text("Ledoño",
-                            style: TextStyle(
-                                fontSize: 30,
-                                fontFamily: 'Lab',
-                                letterSpacing: 2.0,
-                                fontWeight: FontWeight.w800,
-                                color: const Color(0xFFFF6600))),
-                        SizedBox(
-                          width: 8,
-                        ),
-                        Text("A Coruña",
-                            style: TextStyle(
-                                fontSize: 30, fontFamily: 'Lab', letterSpacing: 2.0, color: const Color(0xFFFF6600))),
-                      ],
-                    ),
-                    AlternatingWrap(),
-                    SizedBox(
-                      height: 32,
-                    ),
-                    if (showJoinButton)
-                      Text(
-                        "Inscripciones abiertas",
-                        style: TextStyle(
-                          fontFamily: 'Lab',
-                          fontSize: 35,
-                          fontWeight: FontWeight.w900,
-                          shadows: [
-                            Shadow(
-                              blurRadius: 10,
-                              color: Colors.black.withOpacity(0.2),
-                              offset: Offset(2, 2),
-                            )
-                          ],
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    if (!showJoinButton)
-                      Text(
-                        "Inscripciones cerradas",
-                        style: TextStyle(
-                          fontFamily: 'Lab',
-                          fontSize: 35,
-                          fontWeight: FontWeight.w900,
-                          shadows: [
-                            Shadow(
-                              blurRadius: 10,
-                              color: Colors.black.withOpacity(0.2),
-                              offset: Offset(2, 2),
-                            )
-                          ],
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    if (showJoinButton)
-                      ElevatedButton.icon(
-                        icon: Icon(Icons.monetization_on_outlined, color: Color(0xFFFF6600)),
-                        label: Text(
-                          'Abonos',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFFF6600),
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            side: BorderSide(
-                              color: Color(0xFFFF6600),
-                              width: 2.0,
-                            ),
-                          ),
-                        ),
-                        onPressed: () async {
-                          final Uri url = Uri.parse("https://forms.gle/86cUnAnAbUMoqcTw9");
-                          if (await canLaunchUrl(url)) {
-                            await launchUrl(url, webOnlyWindowName: '_blank');
-                          } else {
-                            throw 'No se pudo abrir $url';
-                          }
-                        },
-                      ),
-                    SizedBox(
-                      height: 8,
-                    ),
-                    if (showJoinButton)
-                      Text(
-                        "Se cierran las inscripciones en:",
-                        style: TextStyle(
-                          fontFamily: 'Lab',
-                          fontSize: 35,
-                          fontWeight: FontWeight.w900,
-                          shadows: [
-                            Shadow(
-                              blurRadius: 10,
-                              color: Colors.black.withOpacity(0.2),
-                              offset: Offset(2, 2),
-                            )
-                          ],
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    const SizedBox(height: 20),
-                    if (showJoinButton)
-                      Center(
-                        child: FlipClockPlus.reverseCountdown(
-                          duration: _calculateTimeLeft(),
-                          digitColor: Colors.white,
-                          backgroundColor: Colors.black,
-                          digitSize: 30.0,
-                          centerGapSpace: 0.0,
-                          borderRadius: const BorderRadius.all(Radius.circular(3.0)),
-                          onDone: () {
-                            setState(() {
-                              showJoinButton = true;
-                            });
-                          },
-                        ),
-                      ),
-                  ],
-                ),
-                Center(
-                  // Widget Center para el logo
-                  child: ScaleTransition(
-                    scale: _pulseAnimation,
-                    child: Container(
-                      width: 300,
-                      height: 300,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFFFF6600),
-                          width: 24.0,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.orange.withOpacity(0.3),
-                            spreadRadius: 10,
-                            blurRadius: 20,
-                            offset: Offset(0, 10),
-                          )
-                        ],
-                      ),
-                      child: Center(
-                        child: RotationTransition(
-                          turns: _pulseAnimation,
-                          child: Image.asset(
-                            "assets/images/mobgenfest_logo.png",
-                            height: 150,
-                            width: 150,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  height: 32,
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Save the date',
-                      style: TextStyle(
-                        fontFamily: 'Lab',
-                        color: Colors.black,
-                        fontSize: 40,
-                        letterSpacing: 1.6,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    Text(
-                      '31 Mayo 2025',
-                      style: TextStyle(
-                        fontFamily: 'Lab',
-                        color: Color(0xFFFF6600),
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.6,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ],
-            ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    bool isScrolled = _scrollOffset > 50;
+    return AppBar(
+      backgroundColor: isScrolled
+          ? AppConstants.brandDark.withOpacity(0.9)
+          : Colors.transparent,
+      elevation: isScrolled ? 4 : 0,
+      surfaceTintColor: Colors.transparent,
+      toolbarHeight: 80,
+      title: Padding(
+        padding: const EdgeInsets.only(left: 20),
+        child: Image.asset(
+          "assets/images/mobgenfest_logo.png",
+          height: 40,
+        ),
+      ),
+      actions: [
+        _navButton("CARTEL", 1),
+        _navButton("COMIDA", 2),
+        _navButton("ENTRADAS", 3),
+        const SizedBox(width: 40),
+      ],
+    );
+  }
+
+  Widget _navButton(String label, int index) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: TextButton(
+        onPressed: () => _scrollToSection(index),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            letterSpacing: 3,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 20),
+      color: Colors.black,
+      width: double.infinity,
+      child: Column(
+        children: [
+          Image.asset("assets/images/mobgenfest_logo.png", height: 60),
+          const SizedBox(height: 30),
+          Text(
+            AppConstants.festivalName,
+            style: const TextStyle(
+              color: AppConstants.brandOrange,
+              fontSize: 32,
+              letterSpacing: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 40),
+          const Divider(color: Colors.white10, indent: 100, endIndent: 100),
+          const SizedBox(height: 40),
+          const Text(
+            "© 2026 MOBGEN FEST. TODOS LOS DERECHOS RESERVADOS.",
+            style: TextStyle(
+                color: Colors.white24, fontSize: 14, letterSpacing: 2),
+          ),
+        ],
       ),
     );
   }

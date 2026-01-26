@@ -1,8 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobgenfest/faq_screen.dart';
 import 'package:mobgenfest/home_screen.dart';
+import 'package:mobgenfest/admin_dashboard.dart';
+import 'package:mobgenfest/registration_success_screen.dart';
+import 'package:mobgenfest/legal_screen.dart';
 
-void main() {
+void main() async {
+  usePathUrlStrategy();
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://hfpyimdevvjofjhvzhev.supabase.co',
+    anonKey: 'sb_publishable_7VGFhOeIXi9VzfZqfKYr_Q_uh_lG_Xo',
+  );
+
   runApp(const MyApp());
 }
 
@@ -13,23 +26,60 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Mobgen Fest 2025',
-      routes: {'/faq': (context) => FAQScreen()},
+      title: 'Mobgen Fest 2026',
+      routes: {
+        '/faq': (context) => const FAQScreen(),
+        '/org': (context) => const AdminDashboard(),
+        '/success': (context) => const RegistrationSuccessScreen(),
+        '/privacy': (context) => const LegalScreen(showPrivacy: true),
+        '/terms': (context) => const LegalScreen(showPrivacy: false),
+      },
       theme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF0A0A0A),
+        primaryColor: const Color(0xFFFF6600),
+        fontFamily: 'Lab',
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFFFF6600),
+            backgroundColor: const Color(0xFFFF6600),
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            textStyle:
+                const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            elevation: 8,
+            shadowColor: const Color(0xFFFF6600).withOpacity(0.5),
           ),
         ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        textTheme: const TextTheme(
+          displayLarge: TextStyle(
+              color: Colors.white,
+              fontSize: 72,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 2.0),
+          displayMedium: TextStyle(
+              color: Colors.white,
+              fontSize: 54,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5),
+          titleLarge: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2),
+          bodyLarge: TextStyle(
+              color: Colors.white70, fontSize: 20, letterSpacing: 0.5),
+          bodyMedium: TextStyle(
+              color: Colors.white60, fontSize: 18, letterSpacing: 0.5),
         ),
-        primarySwatch: Colors.orange,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
+        colorScheme: ColorScheme.fromSeed(
+          brightness: Brightness.dark,
+          seedColor: const Color(0xFFFF6600),
+          primary: const Color(0xFFFF6600),
+          secondary: const Color(0xFFFFCC00),
+          background: const Color(0xFF0A0A0A),
+        ),
         useMaterial3: true,
       ),
       home: HomeScreen(),
