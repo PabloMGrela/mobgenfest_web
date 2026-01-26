@@ -12,23 +12,23 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.0'
           channel: 'stable'
-      
+
       - name: Get dependencies
         run: flutter pub get
-      
+
       - name: Build web
         run: flutter build web --release --base-href "/"
-      
+
       - name: Prepare deployment files
         run: |
           # Preserve CNAME if it exists
@@ -37,7 +37,7 @@ jobs:
           fi
           # Add .nojekyll to prevent GitHub Pages from using Jekyll
           touch build/web/.nojekyll
-      
+
       - name: Deploy to GitHub Pages
         run: |
           # Remove old docs content
@@ -45,7 +45,8 @@ jobs:
           # Copy new build to docs
           cp -r build/web/* docs/
           # Configure git
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.email \
+            "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           # Add changes
           git add docs/
