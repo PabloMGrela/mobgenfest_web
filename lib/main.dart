@@ -46,8 +46,8 @@ class MyApp extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-            textStyle:
-                const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            textStyle: const TextStyle(
+                fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
             elevation: 8,
             shadowColor: const Color(0xFFFF6600).withOpacity(0.5),
           ),
@@ -77,6 +77,7 @@ class MyApp extends StatelessWidget {
           brightness: Brightness.dark,
           seedColor: const Color(0xFFFF6600),
           primary: const Color(0xFFFF6600),
+          onPrimary: Colors.white,
           secondary: const Color(0xFFFFCC00),
           background: const Color(0xFF0A0A0A),
         ),
