@@ -59,6 +59,8 @@ class _HomeScreenState extends State<HomeScreen> {
         duration: const Duration(milliseconds: 800),
         curve: Curves.easeInOutCubic,
       );
+    } else if (index == -1) {
+      Navigator.pushNamed(context, '/faq');
     }
   }
 
@@ -103,6 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _navButton("CARTEL", 1),
         _navButton("COMIDA", 2),
         _navButton("ENTRADAS", 3),
+        _navButton("FAQ", -1), // Special case for separate screen
         const SizedBox(width: 40),
       ],
     );
@@ -151,6 +154,19 @@ class _HomeScreenState extends State<HomeScreen> {
             "© 2026 MOBGEN FEST. TODOS LOS DERECHOS RESERVADOS.",
             style: TextStyle(
                 color: Colors.white24, fontSize: 14, letterSpacing: 2),
+          ),
+          const SizedBox(height: 20),
+          TextButton(
+            onPressed: () => Navigator.pushNamed(context, '/faq'),
+            child: const Text(
+              "PREGUNTAS FRECUENTES (FAQ)",
+              style: TextStyle(
+                color: AppConstants.brandOrange,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.5,
+              ),
+            ),
           ),
         ],
       ),

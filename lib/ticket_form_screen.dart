@@ -428,16 +428,22 @@ class _TicketFormScreenState extends State<TicketFormScreen> {
                     child: Text('Añadir foto de perfil',
                         style: TextStyle(color: Colors.white54))),
                 const SizedBox(height: 12),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 40),
-                  child: Text(
-                    "Como cada vez somos más, empiezan a bailarnos las caras, por favor, sube una foto tuya donde salgas reconocible",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: Colors.white38, fontSize: 24, height: 1.4),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.pushNamed(context, '/faq'),
+                    icon: const Icon(Icons.help_outline,
+                        size: 16, color: AppConstants.brandOrange),
+                    label: const Text(
+                      "¿Tienes dudas? Consulta el FAQ",
+                      style: TextStyle(
+                        color: AppConstants.brandOrange,
+                        fontSize: 14,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
                 _buildTextField(
                     'Nombre Completo', _nameController, Icons.person),
                 const SizedBox(height: 20),

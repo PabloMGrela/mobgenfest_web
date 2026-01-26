@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobgenfest/constants.dart';
 
 class FAQScreen extends StatelessWidget {
   const FAQScreen({super.key});
@@ -6,69 +7,150 @@ class FAQScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: const Color(0xFF0A0A0A),
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: const Text(
-            'FREQUENTLY ASKED QUESTIONS',
-            style: TextStyle(
-                fontFamily: 'Lab',
-                fontSize: 32,
-                letterSpacing: 3,
-                color: Colors.white),
-          ),
-        ),
-        body: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800),
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-              itemCount: faqQuestions.length,
-              itemBuilder: (context, index) {
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: Colors.white.withOpacity(0.1)),
-                  ),
-                  child: ExpansionTile(
-                    shape: const RoundedRectangleBorder(side: BorderSide.none),
-                    collapsedIconColor: const Color(0xFFFF6600),
-                    iconColor: const Color(0xFFFF6600),
-                    title: Text(
-                      faqQuestions[index].question,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 22,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                        child: Text(
-                          faqQuestions[index].answer,
-                          style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 18,
-                              height: 1.6,
-                              letterSpacing: 0.2),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+      backgroundColor: AppConstants.brandDark,
+      body: Stack(
+        children: [
+          // Background Glows
+          Positioned(
+            top: -100,
+            right: -100,
+            child: Container(
+              width: 400,
+              height: 400,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppConstants.brandOrange.withOpacity(0.15),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
             ),
           ),
-        ));
+          Positioned(
+            bottom: -50,
+            left: -50,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppConstants.brandSecondary.withOpacity(0.05),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                leading: const BackButton(color: Colors.white),
+                expandedHeight: 200,
+                floating: false,
+                pinned: true,
+                flexibleSpace: FlexibleSpaceBar(
+                  centerTitle: true,
+                  title: const Text(
+                    'PREGUNTAS FRECUENTES',
+                    style: TextStyle(
+                      fontFamily: 'Lab',
+                      fontSize: 24,
+                      letterSpacing: 4,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  background: Center(
+                    child: Opacity(
+                      opacity: 0.1,
+                      child: Icon(Icons.help_outline,
+                          size: 150, color: AppConstants.brandOrange),
+                    ),
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+                sliver: SliverToBoxAdapter(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 900),
+                      child: Column(
+                        children: faqQuestions
+                            .map((item) => _FAQExpansionTile(item: item))
+                            .toList(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FAQExpansionTile extends StatelessWidget {
+  final FAQItem item;
+  const _FAQExpansionTile({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          collapsedIconColor: AppConstants.brandOrange,
+          iconColor: AppConstants.brandOrange,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          title: Text(
+            item.question,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              fontSize: 20,
+              letterSpacing: 0.5,
+            ),
+          ),
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Text(
+                  item.answer,
+                  style: const TextStyle(
+                    color: Colors.white60,
+                    fontSize: 17,
+                    height: 1.6,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -87,15 +169,15 @@ final faqQuestions = [
   FAQItem(
       question: "¿Cuál es el día bueno?",
       answer:
-          "Todos. Pero el evento principal tiene lugar el sábado, desde las 12 del mediodía hasta que tú decidas."),
+          "Todos. Pero el evento principal tiene lugar el sábado 30 de Mayo, desde las 12 del mediodía hasta que tú decidas."),
   FAQItem(
       question: "¿Puedo ir sólo un día?",
       answer:
-          "Claro, el sábado es la mejor opción si sólo quieres venir un día"),
+          "Claro, el sábado es la mejor opción si sólo quieres venir un día."),
   FAQItem(
       question: "¿Puedo ir los 3 días?",
       answer:
-          "Por supuesto! Como está cerca puedes elegir ir y volver en el día o llevarte tu tienda y quedarte a dormir en la finca."),
+          "¡Por supuesto! Como está cerca puedes elegir ir y volver en el día o llevarte tu tienda y quedarte a dormir en la finca."),
   FAQItem(
       question: "¿Si voy los 3 días, qué haremos?", answer: "Pasarlo bien :D"),
   FAQItem(
@@ -105,7 +187,7 @@ final faqQuestions = [
   FAQItem(
       question: "¿Cuánto cuesta?",
       answer:
-          "No tenemos un presupuesto cerrado, pero estará en torno a los 45€ por persona."),
+          "El precio varía según la entrada: Early Bird 55€, General 65€ y VIP 120€."),
   FAQItem(
       question: "¿Qué está incluído en el precio?",
       answer:
