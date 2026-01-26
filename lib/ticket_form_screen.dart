@@ -44,6 +44,7 @@ class _TicketFormScreenState extends State<TicketFormScreen> {
   bool _isCheckingAvailability = true;
   String? _googleImageUrl;
   bool _acceptedTerms = false;
+  bool _isAlreadyRegistered = false;
 
   final List<String> _tshirtSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
   List<String> _availableTicketTypes = [];
@@ -62,9 +63,32 @@ class _TicketFormScreenState extends State<TicketFormScreen> {
         setState(() {
           _user = data.session?.user;
           _fillUserInfo();
+          if (_user != null) _checkExistingRegistration();
         });
       }
     });
+
+    if (_user != null) _checkExistingRegistration();
+  }
+
+  Future<void> _checkExistingRegistration() async {
+    if (_user?.email == null) return;
+
+    try {
+      final response = await Supabase.instance.client
+          .from('registrations')
+          .select()
+          .eq('email', _user!.email!)
+          .maybeSingle();
+
+      if (mounted && response != null) {
+        setState(() {
+          _isAlreadyRegistered = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error checking registration: $e');
+    }
   }
 
   Future<void> _fetchAvailability() async {
@@ -338,6 +362,60 @@ class _TicketFormScreenState extends State<TicketFormScreen> {
   }
 
   Widget _buildFormView() {
+    if (_isAlreadyRegistered) {
+      return Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 500),
+          padding: const EdgeInsets.all(40),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1A1A),
+            borderRadius: BorderRadius.circular(30),
+            border:
+                Border.all(color: AppConstants.brandOrange.withOpacity(0.3)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppConstants.brandOrange.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check_circle_outline,
+                    size: 40, color: AppConstants.brandOrange),
+              ),
+              const SizedBox(height: 30),
+              const Text(
+                "YA ESTAS REGISTRADO",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Ya tenemos tu registro para el MOBGEN FEST 2026. ¡Estamos deseando verte allí!",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white54, height: 1.5),
+              ),
+              const SizedBox(height: 40),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pushReplacementNamed(context, '/'),
+                  child: const Text("VOLVER A INICIO"),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Center(
