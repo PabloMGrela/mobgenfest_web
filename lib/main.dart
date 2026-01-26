@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -6,6 +7,7 @@ import 'package:mobgenfest/home_screen.dart';
 import 'package:mobgenfest/admin_dashboard.dart';
 import 'package:mobgenfest/registration_success_screen.dart';
 import 'package:mobgenfest/legal_screen.dart';
+import 'package:mobgenfest/ticket_form_screen.dart';
 
 void main() async {
   usePathUrlStrategy();
@@ -33,6 +35,25 @@ class MyApp extends StatelessWidget {
         '/success': (context) => const RegistrationSuccessScreen(),
         '/privacy': (context) => const LegalScreen(showPrivacy: true),
         '/terms': (context) => const LegalScreen(showPrivacy: false),
+        '/registro': (context) {
+          final settings = ModalRoute.of(context)!.settings;
+          final args = settings.arguments as Map<String, String>?;
+
+          // Try to get from arguments first (internal navigation)
+          String? type = args?['type'];
+          String? price = args?['price'];
+
+          // If not found and on web, try query parameters (after external redirect)
+          if (kIsWeb && type == null) {
+            type = Uri.base.queryParameters['type'];
+            price = Uri.base.queryParameters['price'];
+          }
+
+          return TicketFormScreen(
+            initialTicketType: type ?? 'GENERAL PASS',
+            ticketPrice: price ?? '65€',
+          );
+        },
       },
       theme: ThemeData(
         brightness: Brightness.dark,

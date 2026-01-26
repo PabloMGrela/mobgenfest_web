@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mobgenfest/constants.dart';
-import 'package:mobgenfest/ticket_form_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class TicketSection extends StatefulWidget {
@@ -188,14 +187,13 @@ class _TicketCard extends StatelessWidget {
               onPressed: isSoldOut
                   ? null
                   : () {
-                      Navigator.push(
+                      Navigator.pushNamed(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => TicketFormScreen(
-                            initialTicketType: title,
-                            ticketPrice: price,
-                          ),
-                        ),
+                        '/registro',
+                        arguments: {
+                          'type': title,
+                          'price': price,
+                        },
                       );
                     },
               style: isSoldOut

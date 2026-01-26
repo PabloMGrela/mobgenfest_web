@@ -241,7 +241,9 @@ class _TicketFormScreenState extends State<TicketFormScreen> {
     try {
       await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: kIsWeb ? null : 'io.supabase.mobgenfest://login-callback/',
+        redirectTo: kIsWeb
+            ? '${Uri.base.origin}/registro?type=${Uri.encodeComponent(widget.initialTicketType)}&price=${Uri.encodeComponent(widget.ticketPrice)}'
+            : 'io.supabase.mobgenfest://login-callback/',
       );
     } catch (e) {
       if (mounted) {
@@ -427,6 +429,21 @@ class _TicketFormScreenState extends State<TicketFormScreen> {
                 const Center(
                     child: Text('Añadir foto de perfil',
                         style: TextStyle(color: Colors.white54))),
+                const SizedBox(height: 8),
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: Text(
+                      'Asegurate de que sea una foto clara de tu cara para tu acreditacion.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppConstants.brandOrange,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 12),
                 Center(
                   child: TextButton.icon(
