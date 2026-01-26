@@ -1,59 +1,41 @@
-name: Deploy Flutter Web to GitHub Pages
+name: Deploy to GitHub Pages
 
-'on':
+on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
+    branches: [ main ]
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v4
+      
+      - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.38.7'
           channel: 'stable'
-
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Build web
+          
+      - name: Build Web
         run: flutter build web --release --base-href "/"
-
-      - name: Prepare deployment files
-        run: |
-          # Preserve CNAME if it exists
-          if [ -f docs/CNAME ]; then
-            cp docs/CNAME build/web/CNAME
-          fi
-          # Add .nojekyll to prevent GitHub Pages from using Jekyll
-          touch build/web/.nojekyll
-
+        
+      - name: Copy CNAME to build output
+        run: cp CNAME build/web/CNAME
+        
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+          
       - name: Deploy to GitHub Pages
-        run: |
-          # Remove old docs content
-          rm -rf docs/*
-          # Copy new build to docs
-          cp -r build/web/* docs/
-          # Configure git
-          git config --local user.email \
-            "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          # Add changes
-          git add docs/
-          # Check if there are changes to commit
-          if git diff --staged --quiet; then
-            echo "No changes to deploy"
-          else
-            git commit -m "Deploy Flutter web app to GitHub Pages"
-            git push
-          fi
+        id: deployment
+        uses: actions/deploy-pages@v4
