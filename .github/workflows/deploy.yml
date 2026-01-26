@@ -25,8 +25,10 @@ jobs:
       - name: Build Web
         run: flutter build web --release --base-href "/"
         
-      - name: Copy CNAME to build output
-        run: cp CNAME build/web/CNAME
+      - name: Copy CNAME and create 404.html
+        run: |
+          cp CNAME build/web/CNAME
+          cp build/web/index.html build/web/404.html
         
       - name: Setup Pages
         uses: actions/configure-pages@v4

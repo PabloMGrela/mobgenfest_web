@@ -32,6 +32,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/faq': (context) => const FAQScreen(),
         '/org': (context) => const AdminDashboard(),
+        '/org/': (context) => const AdminDashboard(),
         '/success': (context) => const RegistrationSuccessScreen(),
         '/privacy': (context) => const LegalScreen(showPrivacy: true),
         '/terms': (context) => const LegalScreen(showPrivacy: false),
