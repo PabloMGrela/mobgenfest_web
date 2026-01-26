@@ -174,7 +174,8 @@ class _HeroSectionState extends State<HeroSection> {
                 // Call to Action
                 ElevatedButton(
                   onPressed: widget.onGetTicketsTap,
-                  child: const Text("CONSIGUE TUS ENTRADAS"),
+                  child: const Text("CONSIGUE TUS ENTRADAS",
+                      style: TextStyle(color: Colors.white)),
                 ),
               ],
             ),
