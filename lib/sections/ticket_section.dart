@@ -89,8 +89,8 @@ class _TicketSectionState extends State<TicketSection> {
                       title: "VIP EXPERIENCE",
                       price: "120€",
                       description: isVipSoldOut
-                          ? "Limitado a 16 plazas.\n¡Agotado!"
-                          : "Zonas premium.\nAcceso de tres dias.",
+                          ? "Limitado a ${AppConstants.vipTicketLimit} plazas.\n¡Agotado!"
+                          : "Zonas premium.\nQuedan ${AppConstants.vipTicketLimit - _vipCount} plazas.",
                       isRecommended: false,
                       isSoldOut: isVipSoldOut,
                     ),

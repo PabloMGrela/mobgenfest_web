@@ -33,6 +33,7 @@ class _TicketFormScreenState extends State<TicketFormScreen> {
   final _phoneController = TextEditingController();
   final _dietaryController = TextEditingController();
   final _suggestionsController = TextEditingController();
+  final _invitationCodeController = TextEditingController();
 
   String _selectedTicketType = '';
   String _selectedTshirtSize = 'M';
@@ -159,6 +160,7 @@ class _TicketFormScreenState extends State<TicketFormScreen> {
     _phoneController.dispose();
     _dietaryController.dispose();
     _suggestionsController.dispose();
+    _invitationCodeController.dispose();
     _authSubscription.cancel();
     super.dispose();
   }
@@ -191,6 +193,17 @@ class _TicketFormScreenState extends State<TicketFormScreen> {
         const SnackBar(
           content:
               Text('Debes aceptar los terminos y condiciones para continuar.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedTicketType == 'VIP EXPERIENCE' &&
+        _invitationCodeController.text != 'MOBGENVIP2026') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Código de invitación VIP inválido.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -563,6 +576,14 @@ class _TicketFormScreenState extends State<TicketFormScreen> {
                 _buildTextField('Sugerencias (Opcional)',
                     _suggestionsController, Icons.lightbulb_outline,
                     maxLines: 3),
+                if (_selectedTicketType == 'VIP EXPERIENCE') ...[
+                  const SizedBox(height: 20),
+                  _buildTextField(
+                    'Código de Invitación VIP',
+                    _invitationCodeController,
+                    Icons.vpn_key_outlined,
+                  ),
+                ],
                 const SizedBox(height: 30),
                 _buildLegalCheckbox(),
                 const SizedBox(height: 40),
