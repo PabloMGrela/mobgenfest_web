@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobgenfest/constants.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:async';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -14,35 +17,91 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Map<String, dynamic>? _selectedRegistration;
   bool _isLoading = true;
   bool _isAdmin = false;
+  User? _user;
+  late final StreamSubscription<AuthState> _authSubscription;
+  bool _isCheckingRole = true;
 
   @override
   void initState() {
     super.initState();
+    _user = Supabase.instance.client.auth.currentUser;
     _checkAdminAccess();
+
+    _authSubscription =
+        Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      if (mounted) {
+        setState(() {
+          _user = data.session?.user;
+          _checkAdminAccess();
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSubscription.cancel();
+    super.dispose();
   }
 
   Future<void> _checkAdminAccess() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) {
-      _redirectToHome();
+    if (_user == null) {
+      setState(() {
+        _isAdmin = false;
+        _isCheckingRole = false;
+      });
       return;
     }
+
+    setState(() => _isCheckingRole = true);
 
     try {
       final response = await Supabase.instance.client
           .from('profiles')
           .select('role')
-          .eq('id', user.id)
-          .single();
+          .eq('id', _user!.id)
+          .maybeSingle();
 
-      if (response['role'] == 'admin') {
-        setState(() => _isAdmin = true);
-        _fetchRegistrations();
-      } else {
-        _redirectToHome();
+      if (mounted) {
+        if (response != null && response['role'] == 'admin') {
+          setState(() {
+            _isAdmin = true;
+            _isCheckingRole = false;
+          });
+          _fetchRegistrations();
+        } else {
+          setState(() {
+            _isAdmin = false;
+            _isCheckingRole = false;
+          });
+          // If logged in but not admin, we can redirect to home
+          _redirectToHome();
+        }
       }
     } catch (e) {
-      _redirectToHome();
+      if (mounted) {
+        setState(() {
+          _isAdmin = false;
+          _isCheckingRole = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    try {
+      await Supabase.instance.client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: kIsWeb
+            ? '${Uri.base.origin}/org'
+            : 'io.supabase.mobgenfest://login-callback/',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -117,8 +176,50 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    if (_user == null) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: _buildLoginView(),
+      );
+    }
+
+    if (_isCheckingRole) {
+      return const Scaffold(
+          backgroundColor: Colors.black,
+          body: Center(child: CircularProgressIndicator()));
+    }
+
     if (!_isAdmin) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red, size: 64),
+              const SizedBox(height: 24),
+              const Text(
+                "ACCESO DENEGADO",
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "No tienes permisos de administrador para acceder a esta seccion.",
+                style: TextStyle(color: Colors.white54),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () => Navigator.pushReplacementNamed(context, '/'),
+                child: const Text("VOLVER A INICIO"),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     final int total = _registrations.length;
@@ -422,6 +523,64 @@ class _AdminDashboardState extends State<AdminDashboard> {
           Text(value ?? 'N/A',
               style: const TextStyle(fontSize: 18, color: Colors.white70)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLoginView() {
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 500),
+        padding: const EdgeInsets.all(40),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: Colors.white10),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppConstants.brandOrange.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.admin_panel_settings_outlined,
+                  size: 40, color: AppConstants.brandOrange),
+            ),
+            const SizedBox(height: 30),
+            const Text(
+              "ACCESO EXCLUSIVO ORG",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              "Esta seccion esta reservada para los organizadores del MOBGEN FEST. Por favor, inicia sesion para continuar.",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white54, height: 1.5),
+            ),
+            const SizedBox(height: 40),
+            Center(
+              child: GestureDetector(
+                onTap: _signInWithGoogle,
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: SvgPicture.asset(
+                    'assets/images/web_light_rd_ctn.svg',
+                    height: 50,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

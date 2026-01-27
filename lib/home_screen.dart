@@ -168,6 +168,35 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pushNamed(context, '/privacy'),
+                child: const Text(
+                  "POLITICA DE PRIVACIDAD",
+                  style: TextStyle(
+                    color: Colors.white24,
+                    fontSize: 12,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ),
+              const Text(" | ", style: TextStyle(color: Colors.white10)),
+              TextButton(
+                onPressed: () => Navigator.pushNamed(context, '/terms'),
+                child: const Text(
+                  "TERMINOS Y CONDICIONES",
+                  style: TextStyle(
+                    color: Colors.white24,
+                    fontSize: 12,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

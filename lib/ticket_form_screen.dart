@@ -299,7 +299,8 @@ class _TicketFormScreenState extends State<TicketFormScreen> {
             ),
         ],
       ),
-      body: _user == null ? _buildLoginView() : _buildFormView(),
+      body:
+          (_user == null && !kDebugMode) ? _buildLoginView() : _buildFormView(),
     );
   }
 
@@ -512,12 +513,13 @@ class _TicketFormScreenState extends State<TicketFormScreen> {
                   child: Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20),
                     child: Text(
-                      'Asegurate de que sea una foto clara de tu cara para tu acreditacion.',
+                      'LA FOTO DE TU CARA ES IMPRESCINDIBLE PARA TU ACREDITACION. POR FAVOR, SUBE UNA DONDE SE TE RECONOZCA CLARAMENTE.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: AppConstants.brandOrange,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
                       ),
                     ),
                   ),

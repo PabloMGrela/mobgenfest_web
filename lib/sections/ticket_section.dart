@@ -207,7 +207,7 @@ class _TicketCard extends StatelessWidget {
                           backgroundColor: Colors.white10,
                           foregroundColor: Colors.white,
                         )),
-              child: Text(isSoldOut ? "NO DISPONIBLE" : "COMPRAR AHORA"),
+              child: Text(isSoldOut ? "NO DISPONIBLE" : "RESERVAR AHORA"),
             ),
           ),
         ],
