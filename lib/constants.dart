@@ -12,7 +12,7 @@ class AppConstants {
 
   static final DateTime countdownDate = DateTime(2026, 5, 29, 18, 0, 0);
 
-  static final DateTime earlyBirdDeadline = DateTime(2026, 2, 7);
+  static final DateTime earlyBirdDeadline = DateTime(2026, 3, 1);
   static const int vipTicketLimit = 16;
 
   static bool get isEarlyBirdAvailable =>
@@ -36,7 +36,7 @@ class AppConstants {
   static const List<FoodVendor> foodVendors = [
     FoodVendor(name: "CALLOS", type: "SESION VERMUT", rating: 5.0),
     FoodVendor(name: "LACON", type: "COMIDA TRADICIONAL", rating: 5.0),
-    FoodVendor(name: "CENA", type: "SE DESCUBRIRA PROXIMAMENTE", rating: 5.0),
+    FoodVendor(name: "CENA", type: "ARROCES DEL COMPI", rating: 5.0),
   ];
 }
 

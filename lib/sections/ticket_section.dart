@@ -72,7 +72,7 @@ class _TicketSectionState extends State<TicketSection> {
                   children: [
                     _TicketCard(
                       title: "EARLY BIRD",
-                      price: "55€",
+                      price: "50€",
                       description:
                           "Disponible hasta el 6 de feb.\nAcceso general de un dia.",
                       isRecommended: true,
@@ -80,7 +80,7 @@ class _TicketSectionState extends State<TicketSection> {
                     ),
                     _TicketCard(
                       title: "GENERAL PASS",
-                      price: "65€",
+                      price: "60€",
                       description:
                           "Acceso estandar.\nAcceso general de un dia.",
                       isRecommended: false,

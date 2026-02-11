@@ -54,7 +54,7 @@ class _FoodVendorCard extends StatelessWidget {
       case "LACÓN":
         return Icons.restaurant_menu;
       case "CENA":
-        return Icons.auto_awesome;
+        return Icons.rice_bowl_outlined;
       case "TEQUEÑOS":
         return Icons.breakfast_dining;
       default:

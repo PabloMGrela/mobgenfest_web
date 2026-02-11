@@ -52,7 +52,7 @@ class MyApp extends StatelessWidget {
 
           return TicketFormScreen(
             initialTicketType: type ?? 'GENERAL PASS',
-            ticketPrice: price ?? '65€',
+            ticketPrice: price ?? '60€',
           );
         },
       },

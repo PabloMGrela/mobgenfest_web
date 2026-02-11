@@ -187,7 +187,7 @@ final faqQuestions = [
   FAQItem(
       question: "¿Cuánto cuesta?",
       answer:
-          "El precio varía según la entrada: Early Bird 55€, General 65€ y VIP 120€."),
+          "El precio varía según la entrada: Early Bird 50€, General 60€ y VIP 120€."),
   FAQItem(
       question: "¿Qué está incluído en el precio?",
       answer:
