@@ -74,7 +74,7 @@ class _TicketSectionState extends State<TicketSection> {
                       title: "EARLY BIRD",
                       price: "50€",
                       description:
-                          "Disponible hasta el 6 de feb.\nAcceso general de un dia.",
+                          "Disponible hasta el 1 de marzo.\nAcceso general de un dia.",
                       isRecommended: true,
                       isSoldOut: !AppConstants.isEarlyBirdAvailable,
                     ),
