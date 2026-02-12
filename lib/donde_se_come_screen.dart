@@ -70,6 +70,7 @@ class _DondeSeComeScreenState extends State<DondeSeComeScreen>
             'photoUrl': photoUrl,
             'distance': distance,
             'duration': duration,
+            'phone': place['nationalPhoneNumber'],
           };
         }).toList();
 
@@ -191,11 +192,81 @@ class _DondeSeComeScreenState extends State<DondeSeComeScreen>
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: AppConstants.brandOrange,
-                  fontSize: 32, // Slightly smaller to fit photo
-                  fontFamily: 'Lab', // Using the custom font from main.dart
+                  fontSize: 28,
+                  fontFamily: 'Lab',
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              const SizedBox(height: 16),
+              // Extra Details
+              if (_winner != null)
+                Builder(builder: (context) {
+                  final winningRestaurant =
+                      _allRestaurants.firstWhere((r) => r['name'] == _winner);
+                  return Column(
+                    children: [
+                      Text(
+                        winningRestaurant['address'] ?? "",
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            color: Colors.white70, fontSize: 14),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.star,
+                              color: AppConstants.brandOrange, size: 18),
+                          const SizedBox(width: 4),
+                          Text(
+                            "${winningRestaurant['rating']} (${winningRestaurant['ratingCount']})",
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 16),
+                          Text(
+                            winningRestaurant['price'] ?? "",
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.directions_walk,
+                              color: Colors.white70, size: 18),
+                          const SizedBox(width: 4),
+                          Text(
+                            "${winningRestaurant['distance']} (${winningRestaurant['duration']})",
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                      if (winningRestaurant['phone'] != null) ...[
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.phone,
+                                color: AppConstants.brandOrange, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              winningRestaurant['phone'],
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  );
+                }),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),
