@@ -8,6 +8,7 @@ import 'package:mobgenfest/admin_dashboard.dart';
 import 'package:mobgenfest/registration_success_screen.dart';
 import 'package:mobgenfest/legal_screen.dart';
 import 'package:mobgenfest/ticket_form_screen.dart';
+import 'package:mobgenfest/donde_se_come_screen.dart';
 
 void main() async {
   usePathUrlStrategy();
@@ -36,6 +37,7 @@ class MyApp extends StatelessWidget {
         '/success': (context) => const RegistrationSuccessScreen(),
         '/privacy': (context) => const LegalScreen(showPrivacy: true),
         '/terms': (context) => const LegalScreen(showPrivacy: false),
+        '/dondesecome': (context) => const DondeSeComeScreen(),
         '/registro': (context) {
           final settings = ModalRoute.of(context)!.settings;
           final args = settings.arguments as Map<String, String>?;
