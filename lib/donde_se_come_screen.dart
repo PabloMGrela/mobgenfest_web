@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobgenfest/constants.dart';
+import 'models/restaurant.dart';
+import 'widgets/restaurant_card.dart';
+import 'widgets/wheel_animation_overlay.dart';
 
 class DondeSeComeScreen extends StatefulWidget {
   const DondeSeComeScreen({super.key});
@@ -11,25 +14,23 @@ class DondeSeComeScreen extends StatefulWidget {
   State<DondeSeComeScreen> createState() => _DondeSeComeScreenState();
 }
 
-class _DondeSeComeScreenState extends State<DondeSeComeScreen>
-    with SingleTickerProviderStateMixin {
-  // Hardcoded coordinates for context
-  // Lat: 43.367870, Long: -8.403319 (Culleredo, A Coruña)
-
-  List<Map<String, dynamic>> _allRestaurants = [];
+class _DondeSeComeScreenState extends State<DondeSeComeScreen> {
+  List<Restaurant> _allRestaurants = [];
   late List<bool> _selections;
-  String? _winner;
+  Restaurant? _winner;
   bool _isSpinning = false;
   bool _isLoadingData = true;
-  late AnimationController _controller;
+  bool _showWheelAnimation = false;
+
+  /// Set of categories currently enabled (all enabled by default).
+  Set<String> _enabledCategories = {};
+
+  /// All unique categories extracted from the data.
+  List<String> _allCategories = [];
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    );
     _loadRestaurantData();
   }
 
@@ -40,102 +41,136 @@ class _DondeSeComeScreenState extends State<DondeSeComeScreen>
       final data = json.decode(response);
       final List<dynamic> places = data['places'] ?? [];
 
+      final restaurants = places.map((place) {
+        final name = place['displayName']?['text'] ?? 'Unknown';
+        final address = place['formattedAddress'] ?? '';
+        final rating = place['rating']?.toString() ?? 'N/A';
+        final userRatingCount = place['userRatingCount']?.toString() ?? '0';
+        final photoUrl = place['photoUrl'];
+        final distance = place['distanceText'] ?? '';
+        final duration = place['durationText'] ?? '';
+        final category = place['category'] ?? 'Restaurantes';
+
+        String price = '€';
+        final priceLevel = place['priceLevel'];
+        if (priceLevel == 'PRICE_LEVEL_MODERATE') price = '€€';
+        if (priceLevel == 'PRICE_LEVEL_EXPENSIVE') price = '€€€';
+        if (priceLevel == 'PRICE_LEVEL_VERY_EXPENSIVE') price = '€€€€';
+
+        return Restaurant.fromMap({
+          'name': name,
+          'type': 'Restaurante',
+          'category': category,
+          'address': address,
+          'rating': rating,
+          'ratingCount': userRatingCount,
+          'price': price,
+          'photoUrl': photoUrl,
+          'distance': distance,
+          'duration': duration,
+          'phone': place['nationalPhoneNumber'],
+        });
+      }).toList();
+
+      // Extract unique categories preserving order of appearance
+      final seen = <String>{};
+      final categories = <String>[];
+      for (final r in restaurants) {
+        if (seen.add(r.category)) {
+          categories.add(r.category);
+        }
+      }
+
       setState(() {
-        _allRestaurants = places.map((place) {
-          final name = place['displayName']?['text'] ?? 'Unknown';
-          final address = place['formattedAddress'] ?? '';
-          final rating = place['rating']?.toString() ?? 'N/A';
-          final userRatingCount = place['userRatingCount']?.toString() ?? '0';
-          final photoUrl = place['photoUrl'];
-          final distance = place['distanceText'] ?? '';
-          final duration = place['durationText'] ?? '';
-
-          String price = '€';
-          final priceLevel = place['priceLevel'];
-          if (priceLevel == 'PRICE_LEVEL_MODERATE') price = '€€';
-          if (priceLevel == 'PRICE_LEVEL_EXPENSIVE') price = '€€€';
-          if (priceLevel == 'PRICE_LEVEL_VERY_EXPENSIVE') price = '€€€€';
-
-          // Simple "type" derivation or just use address as subtitle
-          // We don't have explicit "type" in standard Places response without deeper parsing
-          // So we'll use address and rating for subtitle.
-
-          return {
-            'name': name,
-            'type': 'Restaurante', // Generic fallback
-            'address': address,
-            'rating': rating,
-            'ratingCount': userRatingCount,
-            'price': price,
-            'photoUrl': photoUrl,
-            'distance': distance,
-            'duration': duration,
-            'phone': place['nationalPhoneNumber'],
-          };
-        }).toList();
-
-        _selections = List.generate(_allRestaurants.length, (_) => true);
+        _allRestaurants = restaurants;
+        _allCategories = categories;
+        _enabledCategories = categories.toSet();
+        _selections = List.generate(restaurants.length, (_) => true);
         _isLoadingData = false;
       });
     } catch (e) {
       debugPrint('Error loading restaurant data: $e');
       setState(() {
         _isLoadingData = false;
-        // Fallback to empty or error state
         _allRestaurants = [];
         _selections = [];
       });
     }
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  /// Toggle a whole category on/off — updates individual selections too.
+  void _toggleCategory(String category) {
+    setState(() {
+      if (_enabledCategories.contains(category)) {
+        _enabledCategories.remove(category);
+        // Deselect all restaurants of this category
+        for (int i = 0; i < _allRestaurants.length; i++) {
+          if (_allRestaurants[i].category == category) {
+            _selections[i] = false;
+          }
+        }
+      } else {
+        _enabledCategories.add(category);
+        // Select all restaurants of this category
+        for (int i = 0; i < _allRestaurants.length; i++) {
+          if (_allRestaurants[i].category == category) {
+            _selections[i] = true;
+          }
+        }
+      }
+    });
   }
 
   void _spinTheWheel() {
-    final selectedIndices = _selections
+    final selectedRestaurants = _selections
         .asMap()
         .entries
         .where((entry) => entry.value)
-        .map((entry) => entry.key)
+        .map((entry) => _allRestaurants[entry.key])
         .toList();
 
-    if (selectedIndices.isEmpty) {
+    if (selectedRestaurants.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Selecciona al menos un restaurante!"),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: const Text("¡Selecciona al menos un restaurante!"),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
       return;
     }
 
+    final random = Random();
+    final winner =
+        selectedRestaurants[random.nextInt(selectedRestaurants.length)];
+
     setState(() {
       _isSpinning = true;
-      _winner = null;
-    });
-
-    _controller.forward(from: 0).then((_) {
-      final random = Random();
-      final winnerIndex =
-          selectedIndices[random.nextInt(selectedIndices.length)];
-      setState(() {
-        _isSpinning = false;
-        _winner = _allRestaurants[winnerIndex]['name'];
-      });
-      _showWinnerDialog();
+      _winner = winner;
+      _showWheelAnimation = true;
     });
   }
 
+  void _onWheelAnimationComplete() {
+    setState(() {
+      _showWheelAnimation = false;
+      _isSpinning = false;
+    });
+    _showWinnerDialog();
+  }
+
   void _showWinnerDialog() {
+    if (_winner == null) return;
+    final w = _winner!;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         child: Container(
+          constraints: const BoxConstraints(maxWidth: 420),
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
             color: const Color(0xFF1A1A1A),
@@ -143,142 +178,138 @@ class _DondeSeComeScreenState extends State<DondeSeComeScreen>
             border: Border.all(color: AppConstants.brandOrange, width: 2),
             boxShadow: [
               BoxShadow(
-                color: AppConstants.brandOrange.withOpacity(0.4),
-                blurRadius: 20,
-                spreadRadius: 5,
-              )
+                color: AppConstants.brandOrange.withValues(alpha: 0.4),
+                blurRadius: 30,
+                spreadRadius: 8,
+              ),
             ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Confetti icon
+              const Text("🎉", style: TextStyle(fontSize: 48)),
+              const SizedBox(height: 16),
               const Text(
                 "¡HOY SE COME EN!",
                 style: TextStyle(
                   color: Colors.white54,
-                  fontSize: 16,
-                  letterSpacing: 2,
+                  fontSize: 14,
+                  letterSpacing: 3,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 24),
-              // Show photo of winner if available
-              if (_winner != null) ...[
-                Builder(builder: (context) {
-                  final winningRestaurant =
-                      _allRestaurants.firstWhere((r) => r['name'] == _winner);
-                  final photoUrl = winningRestaurant['photoUrl'];
-                  if (photoUrl != null) {
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 24),
-                      height: 150,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        image: DecorationImage(
-                          image: (photoUrl.startsWith('http'))
-                              ? NetworkImage(photoUrl)
-                              : AssetImage(photoUrl) as ImageProvider,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    );
-                  }
-                  return const SizedBox.shrink();
-                }),
-              ],
+              const SizedBox(height: 20),
+              // Winner photo
+              if (w.photo.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 20),
+                  height: 160,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    image: DecorationImage(
+                      image: w.photo.startsWith('http')
+                          ? NetworkImage(w.photo)
+                          : AssetImage(w.photo) as ImageProvider,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              // Winner name
               Text(
-                _winner?.toUpperCase() ?? "",
+                w.name.toUpperCase(),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: AppConstants.brandOrange,
-                  fontSize: 28,
+                  fontSize: 26,
                   fontFamily: 'Lab',
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 16),
-              // Extra Details
-              if (_winner != null)
-                Builder(builder: (context) {
-                  final winningRestaurant =
-                      _allRestaurants.firstWhere((r) => r['name'] == _winner);
-                  return Column(
-                    children: [
-                      Text(
-                        winningRestaurant['address'] ?? "",
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                            color: Colors.white70, fontSize: 14),
+              const SizedBox(height: 12),
+              // Address
+              Text(
+                w.address,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              // Rating + Price
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.star,
+                      color: AppConstants.brandOrange, size: 18),
+                  const SizedBox(width: 4),
+                  Text(
+                    "${w.rating} (${w.ratingCount})",
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 16),
+                  Text(
+                    w.price,
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Distance
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.directions_walk,
+                      color: Colors.white70, size: 18),
+                  const SizedBox(width: 4),
+                  Text(
+                    "${w.distance} (${w.duration})",
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                ],
+              ),
+              // Phone
+              if (w.phoneNumber.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.phone,
+                        color: AppConstants.brandOrange, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      w.phoneNumber,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.star,
-                              color: AppConstants.brandOrange, size: 18),
-                          const SizedBox(width: 4),
-                          Text(
-                            "${winningRestaurant['rating']} (${winningRestaurant['ratingCount']})",
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(width: 16),
-                          Text(
-                            winningRestaurant['price'] ?? "",
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.directions_walk,
-                              color: Colors.white70, size: 18),
-                          const SizedBox(width: 4),
-                          Text(
-                            "${winningRestaurant['distance']} (${winningRestaurant['duration']})",
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                        ],
-                      ),
-                      if (winningRestaurant['phone'] != null) ...[
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.phone,
-                                color: AppConstants.brandOrange, size: 18),
-                            const SizedBox(width: 8),
-                            Text(
-                              winningRestaurant['phone'],
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  );
-                }),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppConstants.brandOrange,
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30)),
+                    ),
+                  ],
                 ),
-                child: const Text("¡VAMOS!"),
+              ],
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppConstants.brandOrange,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 16),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30)),
+                  ),
+                  child: const Text(
+                    "¡VAMOS!",
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1),
+                  ),
+                ),
               ),
             ],
           ),
@@ -287,312 +318,279 @@ class _DondeSeComeScreenState extends State<DondeSeComeScreen>
     );
   }
 
+  int _selectedCount() => _selections.where((s) => s).length;
+
+  /// Emoji icon for each category
+  String _categoryIcon(String category) {
+    switch (category) {
+      case 'Restaurantes':
+        return '🍽️';
+      case 'Comida Rápida':
+        return '🍔';
+      case 'Tapas':
+        return '🍢';
+      case 'Pizzerías':
+        return '🍕';
+      case 'Sushi & Asiático':
+        return '🍣';
+      case 'Bares & Copas':
+        return '🍸';
+      default:
+        return '🍴';
+    }
+  }
+
+  Widget _buildCategoryChips() {
+    return SizedBox(
+      height: 42,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _allCategories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final category = _allCategories[index];
+          final isEnabled = _enabledCategories.contains(category);
+          final count =
+              _allRestaurants.where((r) => r.category == category).length;
+
+          return FilterChip(
+            selected: isEnabled,
+            showCheckmark: false,
+            avatar: Text(_categoryIcon(category),
+                style: const TextStyle(fontSize: 16)),
+            label: Text(
+              '$category ($count)',
+              style: TextStyle(
+                color: isEnabled ? Colors.white : Colors.white54,
+                fontWeight: isEnabled ? FontWeight.bold : FontWeight.normal,
+                fontSize: 13,
+              ),
+            ),
+            backgroundColor: const Color(0xFF1A1A1A),
+            selectedColor: AppConstants.brandOrange.withValues(alpha: 0.25),
+            side: BorderSide(
+              color: isEnabled ? AppConstants.brandOrange : Colors.white24,
+              width: 1.2,
+            ),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            onSelected: (_) => _toggleCategory(category),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
-      appBar: AppBar(
-        title: const Text(
-          '¿DONDE SE COME?',
-          style: TextStyle(fontFamily: 'Lab', letterSpacing: 1.5),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 600),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppConstants.brandOrange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                      color: AppConstants.brandOrange.withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.location_on,
-                        color: AppConstants.brandOrange, size: 30),
-                    const SizedBox(width: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "OFICINA",
-                          style: TextStyle(
-                            color: Colors.white54,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "43.367870, -8.403319",
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+    return Stack(
+      children: [
+        // Main Scaffold
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          extendBodyBehindAppBar: true,
+          appBar: AppBar(
+            title: const Text(
+              '¿DONDE SE COME?',
+              style: TextStyle(
+                fontFamily: 'Lab',
+                letterSpacing: 3,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(height: 32),
-              const Text(
-                "SELECCIONA OPCIONES",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                ),
+            ),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            centerTitle: true,
+          ),
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF0A0A0A),
+                  const Color(0xFF121212),
+                  const Color(0xFF1A1A2E),
+                  AppConstants.brandOrange.withValues(alpha: 0.08),
+                ],
+                stops: const [0.0, 0.3, 0.7, 1.0],
               ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: _isLoadingData
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                            color: AppConstants.brandOrange))
-                    : _allRestaurants.isEmpty
-                        ? const Center(
-                            child: Text("No se encontraron restaurantes :(",
-                                style: TextStyle(color: Colors.white54)))
-                        : ListView.builder(
-                            itemCount: _allRestaurants.length,
-                            itemBuilder: (context, index) {
-                              final restaurant = _allRestaurants[index];
-                              final isSelected = _selections[index];
-                              return AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                margin: const EdgeInsets.only(bottom: 12),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? const Color(0xFF1E1E1E)
-                                      : const Color(0xFF0F0F0F),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? Colors.white24
-                                        : Colors.white10,
-                                  ),
-                                ),
-                                child: InkWell(
-                                  onTap: () {
-                                    setState(() {
-                                      _selections[index] = !_selections[index];
-                                    });
-                                  },
-                                  child: Row(
-                                    children: [
-                                      // Photo
-                                      if (restaurant['photoUrl'] != null)
-                                        Container(
-                                          width: 80,
-                                          height: 80,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                const BorderRadius.only(
-                                              topLeft: Radius.circular(12),
-                                              bottomLeft: Radius.circular(12),
-                                            ),
-                                            image: DecorationImage(
-                                              image: (restaurant['photoUrl']
-                                                      .startsWith('http'))
-                                                  ? NetworkImage(
-                                                      restaurant['photoUrl'])
-                                                  : AssetImage(restaurant[
-                                                          'photoUrl'])
-                                                      as ImageProvider,
-                                              fit: BoxFit.cover,
-                                            ),
-                                          ),
-                                        )
-                                      else
-                                        Container(
-                                          width: 80,
-                                          height: 80,
-                                          decoration: BoxDecoration(
-                                            color: isSelected
-                                                ? AppConstants.brandOrange
-                                                : Colors.white10,
-                                            borderRadius:
-                                                const BorderRadius.only(
-                                              topLeft: Radius.circular(12),
-                                              bottomLeft: Radius.circular(12),
-                                            ),
-                                          ),
-                                          child: Icon(
-                                            Icons.restaurant,
-                                            color: isSelected
-                                                ? Colors.white
-                                                : Colors.white38,
-                                            size: 30,
-                                          ),
-                                        ),
-
-                                      Expanded(
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(12.0),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                restaurant['name'],
-                                                style: TextStyle(
-                                                  color: isSelected
-                                                      ? Colors.white
-                                                      : Colors.white38,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 16,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                restaurant['address'],
-                                                style: TextStyle(
-                                                  color: isSelected
-                                                      ? Colors.white60
-                                                      : Colors.white24,
-                                                  fontSize: 12,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              const SizedBox(height: 8),
-                                              Row(
-                                                children: [
-                                                  Icon(Icons.star,
-                                                      size: 14,
-                                                      color: AppConstants
-                                                          .brandSecondary),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    "${restaurant['rating']} (${restaurant['ratingCount']})",
-                                                    style: TextStyle(
-                                                      color: isSelected
-                                                          ? Colors.white70
-                                                          : Colors.white30,
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 12),
-                                                  Text(
-                                                    restaurant['price'],
-                                                    style: TextStyle(
-                                                      color: Colors.greenAccent,
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                  if (restaurant['distance']
-                                                      .isNotEmpty) ...[
-                                                    const SizedBox(width: 12),
-                                                    Icon(Icons.directions_walk,
-                                                        size: 14,
-                                                        color: isSelected
-                                                            ? Colors.white70
-                                                            : Colors.white24),
-                                                    const SizedBox(width: 4),
-                                                    Text(
-                                                      "${restaurant['distance']} (${restaurant['duration']})",
-                                                      style: TextStyle(
-                                                        color: isSelected
-                                                            ? Colors.white70
-                                                            : Colors.white30,
-                                                        fontSize: 12,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ],
-                                              )
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-
-                                      Padding(
-                                        padding:
-                                            const EdgeInsets.only(right: 12),
-                                        child: Checkbox(
-                                          value: isSelected,
-                                          activeColor: AppConstants.brandOrange,
-                                          checkColor: Colors.white,
-                                          side: const BorderSide(
-                                              color: Colors.white24),
-                                          onChanged: (bool? value) {
-                                            setState(() {
-                                              _selections[index] =
-                                                  value ?? false;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                height: 60,
-                child: ElevatedButton(
-                  onPressed: _isSpinning ? null : _spinTheWheel,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppConstants.brandOrange,
-                    elevation: 8,
-                    shadowColor: AppConstants.brandOrange.withOpacity(0.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: _isSpinning
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(Icons.casino, size: 28),
-                            SizedBox(width: 12),
-                            Text(
-                              "¡SORTEAR!",
+            ),
+            child: SafeArea(
+              child: Center(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 1400),
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Header section
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              "SELECCIONA TUS OPCIONES",
                               style: TextStyle(
-                                fontSize: 20,
+                                color: Colors.white,
+                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                letterSpacing: 2,
+                                letterSpacing: 1.5,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                          if (!_isLoadingData && _allRestaurants.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: AppConstants.brandOrange
+                                    .withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: AppConstants.brandOrange
+                                      .withValues(alpha: 0.4),
+                                ),
+                              ),
+                              child: Text(
+                                "${_selectedCount()} / ${_allRestaurants.length}",
+                                style: const TextStyle(
+                                  color: AppConstants.brandOrange,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+
+                      // Category filter chips
+                      if (!_isLoadingData && _allCategories.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        _buildCategoryChips(),
+                      ],
+
+                      const SizedBox(height: 16),
+
+                      // Restaurant grid
+                      Expanded(
+                        child: _isLoadingData
+                            ? const Center(
+                                child: CircularProgressIndicator(
+                                    color: AppConstants.brandOrange),
+                              )
+                            : _allRestaurants.isEmpty
+                                ? const Center(
+                                    child: Text(
+                                      "No se encontraron restaurantes :(",
+                                      style: TextStyle(color: Colors.white54),
+                                    ),
+                                  )
+                                : LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      int crossAxisCount = 1;
+                                      if (constraints.maxWidth > 1200) {
+                                        crossAxisCount = 4;
+                                      } else if (constraints.maxWidth > 900) {
+                                        crossAxisCount = 3;
+                                      } else if (constraints.maxWidth > 600) {
+                                        crossAxisCount = 2;
+                                      }
+
+                                      // Filter to only show restaurants in enabled categories
+                                      final visibleIndices = <int>[];
+                                      for (int i = 0;
+                                          i < _allRestaurants.length;
+                                          i++) {
+                                        if (_enabledCategories.contains(
+                                            _allRestaurants[i].category)) {
+                                          visibleIndices.add(i);
+                                        }
+                                      }
+
+                                      if (visibleIndices.isEmpty) {
+                                        return const Center(
+                                          child: Text(
+                                            "Ninguna categoría seleccionada",
+                                            style: TextStyle(
+                                                color: Colors.white54,
+                                                fontSize: 16),
+                                          ),
+                                        );
+                                      }
+
+                                      return GridView.builder(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 80),
+                                        gridDelegate:
+                                            SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: crossAxisCount,
+                                          childAspectRatio: 0.8,
+                                          crossAxisSpacing: 16,
+                                          mainAxisSpacing: 16,
+                                        ),
+                                        itemCount: visibleIndices.length,
+                                        itemBuilder: (context, gridIndex) {
+                                          final actualIndex =
+                                              visibleIndices[gridIndex];
+                                          final restaurant =
+                                              _allRestaurants[actualIndex];
+                                          final isSelected =
+                                              _selections[actualIndex];
+                                          return RestaurantCard(
+                                            restaurant: restaurant,
+                                            isSelected: isSelected,
+                                            onTap: () {
+                                              setState(() {
+                                                _selections[actualIndex] =
+                                                    !_selections[actualIndex];
+                                              });
+                                            },
+                                          );
+                                        },
+                                      );
+                                    },
+                                  ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 20),
-            ],
+            ),
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: _isSpinning ? null : _spinTheWheel,
+            backgroundColor: AppConstants.brandOrange,
+            elevation: 12,
+            icon: _isSpinning
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2),
+                  )
+                : const Icon(Icons.casino, size: 28),
+            label: const Text(
+              "¡SORTEAR!",
+              style: TextStyle(
+                  fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 2),
+            ),
           ),
         ),
-      ),
+
+        // Wheel animation overlay (on top of everything)
+        if (_showWheelAnimation && _winner != null)
+          WheelAnimationOverlay(
+            selectedRestaurants: _selections
+                .asMap()
+                .entries
+                .where((entry) => entry.value)
+                .map((entry) => _allRestaurants[entry.key])
+                .toList(),
+            winner: _winner!,
+            onComplete: _onWheelAnimationComplete,
+          ),
+      ],
     );
   }
 }
